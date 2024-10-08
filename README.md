@@ -35,12 +35,12 @@ python -m grpc_tools.protoc -I=. --python_out=. --grpc_python_out=. phone.proto
 ### Шаг 2: Запуск сервера
 Запустите сервер, который будет обрабатывать gRPC-запросы:
 ```bash
-python server.py
+python grpcServer.py
 ```
 
 ### Шаг 3: Запуск клиента
 Запустите клиента, чтобы взаимодействовать с сервером:
 ```bash
-python client.py
+python grpcClient.py
 ```
 
