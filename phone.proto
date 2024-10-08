@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+service TrackerService {
+  // Stream API for sending telemetry data
+  rpc SetTelemetryStream(stream TelemetryData) returns (TelemetryResponse);
+
+  // Method to get the current coordinate
+  rpc get_one(Empty) returns (TelemetryData);
+
+  // Method to start the simulation of coordinates with a selected duration and algorithm
+  rpc start(MovementRequest) returns (TelemetryResponse);
+
+  // Method to switch the movement algorithm in real-time
+  rpc switch_algorithm(AlgorithmRequest) returns (TelemetryResponse);
+}
+
+message TelemetryData {
+  double latitude = 1;
+  double longitude = 2;
+  int64 timestamp = 3;
+}
+
+message Empty {}
+
+message MovementRequest {
+  string algorithm = 1;
+  int64 duration = 2;
+}
+
+message AlgorithmRequest {
+  string algorithm = 1;
+}
+
+message TelemetryResponse {
+  string message = 1;
+}
