@@ -44,3 +44,9 @@ python grpcServer.py
 python grpcClient.py
 ```
 
+## Unit Тесты
+Реализован тест для проверки работоспособности решения
+```bash
+python -m unittest grpcTestTelemetry  
+```
+

@@ -10,41 +10,38 @@ import phone_pb2_grpc
 
 class TelemetryService(phone_pb2_grpc.TelemetryServiceServicer):
     def __init__(self):
-        # Начальные координаты трекера
+        # Initial tracker coordinates
         self.current_latitude = 10.000
         self.current_longitude = -10.000
         self.lock = threading.Lock()
 
     def SetTelemetryStream(self, request_iterator, context):
-        """
-        Обрабатывает поток данных Telemetry и отправляет команды в ответ.
-        """
         for telemetry_data in request_iterator:
-            # Получаем данные телеметрии
+            # Receive telemetry data
             user_id = telemetry_data.user_id
             location = telemetry_data.location
 
             print(f"Received telemetry from {user_id}: "
                   f"Latitude: {location.latitude}, Longitude: {location.longitude}")
 
-            # В зависимости от полученных данных, отправляем команды
+            # Depending on the received data, send commands
             if random.random() < 0.5:
-                # Пример отправки команды GetOne
+                # Example of sending the GetOne command
                 yield phone_pb2.TelemetryStreamCommand(
                     get_one=phone_pb2.TelemetryStreamCommand.GetOne()
                 )
             else:
-                # Пример отправки команды Start с произвольной продолжительностью
+                # Example of sending the Start command with a random duration
                 yield phone_pb2.TelemetryStreamCommand(
                     start=phone_pb2.TelemetryStreamCommand.Start(duration=random.uniform(5, 10))
                 )
 
-            # Имитация задержки для демонстрации двусторонней потоковой связи
+            # Simulate a delay to demonstrate bidirectional streaming
             time.sleep(1)
 
 
 def serve():
-    # Настройка gRPC-сервера
+    # Setup gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     phone_pb2_grpc.add_TelemetryServiceServicer_to_server(TelemetryService(), server)
     server.add_insecure_port('[::]:50051')
