@@ -1,58 +1,49 @@
 import grpc
+import time
+import threading
+import random
 import phone_pb2
 import phone_pb2_grpc
 
 
-# Get the current coordinates
-def run_get_one(stub):
-    response = stub.get_one(phone_pb2.Empty())
-    print(f"Current coordinates: Latitude: {response.latitude}, Longitude: {response.longitude}")
+def telemetry_stream_generator():
+    """
+    Генератор данных телеметрии для отправки на сервер.
+    """
+    user_id = "user123"
+    while True:
+        # Пример данных с текущим временем и случайными координатами
+        timestamp = phone_pb2.Timestamp(seconds=int(time.time()), nanos=0)
+        location = phone_pb2.Telemetry.Location(
+            timestamp=timestamp,
+            latitude=10.000 + random.uniform(-0.01, 0.01),
+            longitude=-10.000 + random.uniform(-0.01, 0.01)
+        )
+        yield phone_pb2.Telemetry(user_id=user_id, location=location)
+
+        # Имитация отправки каждые 2 секунды
+        time.sleep(2)
 
 
-# Start the movement simulation
-def run_start_simulation(stub, algorithm, duration):
-    response = stub.start(phone_pb2.MovementRequest(algorithm=algorithm, duration=duration))
-    print(response.message)
-
-
-# Switch the movement algorithm
-def run_switch_algorithm(stub, new_algorithm):
-    response = stub.switch_algorithm(phone_pb2.AlgorithmRequest(algorithm=new_algorithm))
-    print(response.message)
-
-
-# Run the client with command selection
-def client():
+def run():
+    # Устанавливаем соединение с сервером
     with grpc.insecure_channel('localhost:50051') as channel:
-        stub = phone_pb2_grpc.TrackerServiceStub(channel)
+        stub = phone_pb2_grpc.TelemetryServiceStub(channel)
 
-        while True:
-            print("\nCommands:")
-            print("1: Get one coordinate")
-            print("2: Start simulation (enter duration and algorithm)")
-            print("3: Switch algorithm")
-            print("4: Exit")
-            choice = input("Enter your choice: ")
+        # Создаём двусторонний поток
+        responses = stub.SetTelemetryStream(telemetry_stream_generator())
 
-            if choice == "1":
-                run_get_one(stub)
-
-            elif choice == "2":
-                duration = int(input("Enter duration in seconds: "))
-                algorithm = input("Enter algorithm (linear/random): ")
-                run_start_simulation(stub, algorithm, duration)
-
-            elif choice == "3":
-                algorithm = input("Enter new algorithm (linear/random): ")
-                run_switch_algorithm(stub, algorithm)
-
-            elif choice == "4":
-                print("Exiting...")
-                break
-
+        # Обрабатываем команды от сервера
+        for command in responses:
+            if command.HasField('get_one'):
+                print("Received command: GetOne")
+            elif command.HasField('start'):
+                print(f"Received command: Start with duration {command.start.duration}")
+            elif command.HasField('ack'):
+                print("Received command: Ack")
             else:
-                print("Invalid choice, please try again.")
+                print("Unknown command received")
 
 
-if __name__ == "__main__":
-    client()
+if __name__ == '__main__':
+    run()
